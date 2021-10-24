@@ -54,7 +54,9 @@ jobs:
         -only-testing:UITestPracticeUITests
 
     - name: Stop Recording
-      run: ps | grep simctl | grep -v grep | awk '{ print "kill -SIGINT", $1 }' | bash
+      run: |
+        ps | grep simctl | grep -v grep | awk '{ print "kill -SIGINT", $1 }' | bash
+        sleep 10
 
     - name: Store Test Result Directory
       uses: actions/upload-artifact@v2
