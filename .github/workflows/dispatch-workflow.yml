@@ -1,0 +1,64 @@
+name: Dispatch Workflow
+
+on:
+  workflow_dispatch:
+
+env:
+  OUTPUT_DIR: "${{ github.workspace }}/output"
+  DEVELOPER_DIR: /Applications/Xcode_12.5.1.app/Contents/Developer
+  DERIVED_DATA: DerivedData
+
+jobs:
+ simulator-record:
+   name: Simulator Record
+   runs-on: macos-11
+
+   steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Make Output Directory
+      run: |
+        mkdir -p ${{ env.OUTPUT_DIR }}
+        mkdir -p ${{ env.FL_OUTPUT_DIR }}/records
+
+    - name: Extract Simulator
+      run: |
+        xcrun xctrace list devices 2>&1 | \
+        grep -v Apple | \
+        grep "iPhone 11 (14.5)" | \
+        sed -n "1,1p" | \
+        sed -r "s/^.*\(([-0-9ABCDEF]+)\)$/\1/" | \
+        xargs -Iid echo "DEVICE_ID=id" >> $GITHUB_ENV
+
+    - name: Build For Test
+      run: |
+        xcodebuild clean build-for-testing \
+        -project UITestPractice.xcodeproj \
+        -scheme UITestPractice \
+        -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
+        -derivedDataPath ${{ env.DERIVED_DATA }}
+
+    - name: Boot Simulators & Recording
+      run: |
+        xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
+        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.FL_OUTPUT_DIR }}/records/iphone.mov &
+
+    - name: UITest Without Building
+      run: |
+        xcodebuild test-without-building \
+        -project UITestPractice.xcodeproj \
+        -scheme UITestPractice \
+        -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
+        -derivedDataPath ${{ env.DERIVED_DATA }} \
+        -only-testing:UITestPracticeUITests
+
+    - name: Stop Recording
+      run: ps | grep simctl | grep -v grep | awk '{ print \"kill -SIGINT\", $1 }' | bash
+
+    - name: Store Test Result Directory
+      uses: actions/upload-artifact@v2
+      with:
+        name: Test Result
+        path: ${{ env.OUTPUT_DIR }}
+        retention-days: 3
