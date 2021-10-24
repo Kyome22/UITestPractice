@@ -42,13 +42,14 @@ jobs:
     - name: Boot Simulators & Recording & UITest & Stop Recording
       run: |
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
-        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 & RECORD_PID=$!
+        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.OUTPUT_DIR }}/records/iphone.mov -f > /dev/null 2>&1 & RECORD_PID=$!
         xcodebuild test-without-building \
         -project UITestPractice.xcodeproj \
         -scheme UITestPractice \
         -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
         -derivedDataPath ${{ env.DERIVED_DATA }} \
         -only-testing:UITestPracticeUITests
+        cat $RECORDPID
         kill -2 $RECORD_PID
 
     # - name: UITest Without Building
@@ -66,6 +67,7 @@ jobs:
     #     sleep 10
 
     - name: Store Test Result Directory
+      if: success()
       uses: actions/upload-artifact@v2
       with:
         name: Test Result
