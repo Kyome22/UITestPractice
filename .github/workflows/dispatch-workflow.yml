@@ -20,7 +20,7 @@ jobs:
     - name: Make Output Directory
       run: |
         mkdir -p ${{ env.OUTPUT_DIR }}
-        mkdir -p ${{ env.FL_OUTPUT_DIR }}/records
+        mkdir -p ${{ env.OUTPUT_DIR }}/records
 
     - name: Extract Simulator
       run: |
@@ -42,7 +42,7 @@ jobs:
     - name: Boot Simulators & Recording
       run: |
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
-        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.FL_OUTPUT_DIR }}/records/iphone.mov &
+        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.OUTPUT_DIR }}/records/iphone.mov &
 
     - name: UITest Without Building
       run: |
