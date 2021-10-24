@@ -43,7 +43,7 @@ jobs:
       run: |
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
         xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.OUTPUT_DIR }}/records/iphone.mov -f > /dev/null 2>&1 & \
-        echo "RECORD_PID=$!" >> $GITHUB_ENV
+        echo "RECORD_PID=${!}" >> $GITHUB_ENV
         echo "⭐️ ${{ env.RECORD_PID }}"
         xcodebuild test-without-building \
         -project UITestPractice.xcodeproj \
