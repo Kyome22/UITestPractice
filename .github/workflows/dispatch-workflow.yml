@@ -39,24 +39,32 @@ jobs:
         -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
         -derivedDataPath ${{ env.DERIVED_DATA }}
 
-    - name: Boot Simulators & Recording
+    - name: Boot Simulators & Recording & UITest & Stop Recording
       run: |
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
-        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.OUTPUT_DIR }}/records/iphone.mov &
-
-    - name: UITest Without Building
-      run: |
+        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 & | \
+        RECORD_PID=$!
         xcodebuild test-without-building \
         -project UITestPractice.xcodeproj \
         -scheme UITestPractice \
         -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
         -derivedDataPath ${{ env.DERIVED_DATA }} \
         -only-testing:UITestPracticeUITests
+        kill -2 $RECORD_PID
 
-    - name: Stop Recording
-      run: |
-        ps | grep simctl | grep -v grep | awk '{ print "kill -SIGINT", $1 }' | bash
-        sleep 10
+    # - name: UITest Without Building
+    #   run: |
+    #     xcodebuild test-without-building \
+    #     -project UITestPractice.xcodeproj \
+    #     -scheme UITestPractice \
+    #     -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
+    #     -derivedDataPath ${{ env.DERIVED_DATA }} \
+    #     -only-testing:UITestPracticeUITests
+
+    # - name: Stop Recording
+    #   run: |
+    #     ps | grep simctl | grep -v grep | awk '{ print "kill -SIGINT", $1 }' | bash
+    #     sleep 10
 
     - name: Store Test Result Directory
       uses: actions/upload-artifact@v2
