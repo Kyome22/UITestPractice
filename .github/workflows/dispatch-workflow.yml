@@ -44,14 +44,13 @@ jobs:
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
         xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.OUTPUT_DIR }}/records/iphone.mov -f > /dev/null 2>&1 &
         RECORD_PID=$!
-        echo "⭐️ ${RECORD_PID}"
         xcodebuild test-without-building \
         -project UITestPractice.xcodeproj \
         -scheme UITestPractice \
         -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
         -derivedDataPath ${{ env.DERIVED_DATA }} \
         -only-testing:UITestPracticeUITests
-        ps | grep simctl | grep -v grep | awk '{ print "kill -SIGINT", $1 }' | bash
+        kill -SIGINT ${RECORD_PID}
 
     # - name: UITest Without Building
     #   run: |
