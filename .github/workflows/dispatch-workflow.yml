@@ -44,14 +44,15 @@ jobs:
         open ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
         xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo --force ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 &
-        echo "RECORD_PID=${!}" | tee -a $GITHUB_ENV
+        RECORD_PID=$!
+        ps | grep simctl
         xcodebuild test-without-building \
         -project UITestPractice.xcodeproj \
         -scheme UITestPractice \
         -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
         -derivedDataPath ${{ env.DERIVED_DATA }} \
         -only-testing:UITestPracticeUITests
-        kill -SIGINT ${{ env.RECORD_PID }}
+        kill -SIGINT $RECORD_PID
 
     # - name: UITest Without Building
     #   run: |
@@ -64,6 +65,9 @@ jobs:
 
     # - name: Stop Recording
     #   run: kill -SIGINT ${{ env.RECORD_PID }}
+
+    - name: Check Process
+      run: ps | grep simctl
 
     - name: Store Test Result Directory
       if: success()
