@@ -44,8 +44,7 @@ jobs:
         open ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
         xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo --force ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 &
-        echo "RECORD_PID=$!" >> $GITHUB_ENV
-        echo "⭐️ ${{ env.RECORD_PID }}"
+        echo "RECORD_PID=${!}" | tee -a $GITHUB_ENV
 
     - name: UITest Without Building
       run: |
