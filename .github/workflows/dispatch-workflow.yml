@@ -47,7 +47,7 @@ jobs:
         -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
         -derivedDataPath ${{ env.DERIVED_DATA }}
 
-    - name: Boot Simulators & Recording
+    - name: UITest Without Building
       run: |
         open -a ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
@@ -60,23 +60,7 @@ jobs:
         -derivedDataPath ${{ env.DERIVED_DATA }} \
         -only-testing:UITestPracticeUITests
         echo $RECORD_PID
-
-    # - name: UITest Without Building
-    #   run: |
-    #     xcodebuild test-without-building \
-    #     -project UITestPractice.xcodeproj \
-    #     -scheme UITestPractice \
-    #     -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
-    #     -derivedDataPath ${{ env.DERIVED_DATA }} \
-    #     -only-testing:UITestPracticeUITests
-
-    # - name: Stop Recording
-    #   run: kill -SIGINT ${{ env.RECORD_PID }}
-
-    - name: Check Process
-      run: |
-        ps | grep simctl | awk '{ print "HOGE", $1 }'
-        ps | grep simctl | grep -v grep | awk '{ print "kill -SIGINT", $1 }' | bash
+        kill -SIGINT $RECORD_PID
 
     - name: Store Test Result Directory
       if: success()
