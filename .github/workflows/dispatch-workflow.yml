@@ -41,8 +41,9 @@ jobs:
 
     - name: Boot Simulators & Recording & UITest & Stop Recording
       run: |
+        open ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
-        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo ${{ env.OUTPUT_DIR }}/records/iphone.mov -f > /dev/null 2>&1 &
+        xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo --force ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 &
         RECORD_PID=$!
         xcodebuild test-without-building \
         -project UITestPractice.xcodeproj \
