@@ -74,7 +74,9 @@ jobs:
     #   run: kill -SIGINT ${{ env.RECORD_PID }}
 
     - name: Check Process
-      run: ps | grep "simctl"
+      run: |
+        ps | grep simctl | awk '{ print "HOGE", $1 }'
+        ps | grep simctl | grep -v grep | awk '{ print "kill -SIGINT", $1 }' | bash
 
     - name: Store Test Result Directory
       if: success()
