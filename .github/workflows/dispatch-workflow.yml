@@ -51,7 +51,8 @@ jobs:
       run: |
         xcodebuild -version
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
-        open -a Simulator
+        ls -la ${{ env.DEVELOPER_DIR }}/Applications
+        open ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
         xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo --force --display=internal ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 &
         RECORD_PID=$!
         xcodebuild test-without-building \
