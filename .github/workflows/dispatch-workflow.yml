@@ -68,6 +68,7 @@ jobs:
         -only-testing:UITestPracticeUITests
         echo $RECORD_PID
         kill -SIGINT $RECORD_PID
+        sleep 15
 
     - name: Store Test Result Directory
       if: success()
