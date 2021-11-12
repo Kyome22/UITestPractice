@@ -30,6 +30,12 @@ jobs:
         mkdir -p ${{ env.OUTPUT_DIR }}
         mkdir -p ${{ env.OUTPUT_DIR }}/records
 
+    - name: Select Xcode
+      run: |
+        xcodebuild -version
+        sudo xcode-select --switch ${{ env.DEVELOPER_DIR }}
+        xcodebuild -version
+
     - name: Extract Simulator
       run: |
         xcrun xctrace list devices 2>&1 | \
@@ -50,9 +56,8 @@ jobs:
     - name: UITest Without Building
       run: |
         xcodebuild -version
+        oprn ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
-        ls -la ${{ env.DEVELOPER_DIR }}/Applications
-        open ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
         xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo --force --display=internal ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 &
         RECORD_PID=$!
         xcodebuild test-without-building \
