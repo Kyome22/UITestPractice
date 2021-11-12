@@ -56,7 +56,7 @@ jobs:
     - name: UITest Without Building
       run: |
         xcodebuild -version
-        oprn ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
+        open ${{ env.DEVELOPER_DIR }}/Applications/Simulator.app
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
         xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo --force --display=internal ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 &
         RECORD_PID=$!
