@@ -4,25 +4,45 @@ on:
   workflow_dispatch:
 
 env:
-  OUTPUT_DIR: "${{ github.workspace }}/output"
-  DEVELOPER_DIR: "/Applications/Xcode_13.1.app/Contents/Developer"
   DERIVED_DATA: "DerivedData"
-  CODE_SIGN_IDENTITY: ""
-  CODE_SIGNING_REQUIRED: "NO"
-  CODE_SIGNING_ALLOWED: "NO"
 
 jobs:
-  cleanup-runs:
-    name: Clean up previously running instances of a workflow on the same branch
-    runs-on: ubuntu-latest
-    steps:
-      - uses: rokroskar/workflow-run-cleanup-action@master
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+  build:
+    name: Build
+    runs-on: macos-11
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_13.1.app/Contents/Developer"
+      CODE_SIGN_IDENTITY: ""
+      CODE_SIGNING_REQUIRED: "NO"
+      CODE_SIGNING_ALLOWED: "NO"
 
-  simulator-record:
-   name: Simulator Record
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build for Test
+      run: |
+        xcodebuild -version
+        xcodebuild clean build-for-testing \
+        -project UITestPractice.xcodeproj \
+        -scheme UITestPractice \
+        -destination "platform=iOS Simulator,name=iPhone 12,0S=14.5" \
+        -derivedDataPath ${{ env.DERIVED_DATA }}
+
+    - name: Upload Products
+      uses: actions/upload-artifact@v2
+      with:
+        name: Products
+        path: ${{ env.DERIVED_DATA }}/Build/Products
+        retention-days: 1
+
+  uitest:
+   name: UITest
    runs-on: macos-11
+   needs: build
+   env:
+     DEVELOPER_DIR: "/Applications/Xcode_12.5.1.app/Contents/Developer"
+     OUTPUT_DIR: "${{ github.workspace }}/output"
 
    steps:
     - name: Checkout
@@ -35,45 +55,50 @@ jobs:
       run: |
         xcrun xctrace list devices 2>&1 | \
         grep -v Apple | \
-        sed -r "s/Simulator //g" | \
-        grep "iPhone 13 (15.0)" | \
-        sed -n "1,1p" | \
+        grep "iPhone 12 (14.5)" | \
+        sed -n "1,1p" > ${{ env.OUTPUT_DIR }}/simulator.txt
+        cat ${{ env.OUTPUT_DIR }}/simulator.txt | \
         sed -r "s/^.*\(([-0-9ABCDEF]+)\)$/\1/" | \
-        xargs -Iid echo "DEVICE_ID=id" >> $GITHUB_ENV
+        { read id; echo "DEVICE_ID=$id" >> $GITHUB_ENV; }
 
     - name: Echo DEVICE_ID
       run: |
         echo ${{ env.DEVICE_ID }}
         echo $DEVICE_ID
 
-    - name: Build For Test
-      run: |
-        xcodebuild clean build-for-testing \
-        -project UITestPractice.xcodeproj \
-        -scheme UITestPractice \
-        -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
-        -derivedDataPath ${{ env.DERIVED_DATA }}
+    - name: Download Products
+      uses: actions/download-artifact@v2
+      with:
+        name: Products
+        path: ${{ env.DERIVED_DATA }}/Build/Products
 
     - name: UITest Without Building
       run: |
         xcodebuild -version
         xcrun simctl bootstatus ${{ env.DEVICE_ID }} -b
         xcrun simctl io "${{ env.DEVICE_ID }}" recordVideo -f ${{ env.OUTPUT_DIR }}/records/iphone.mov > /dev/null 2>&1 &
-        RECORD_PID=$!
+        RECORD_PID=${!}
+        set +o errexit
         xcodebuild test-without-building \
         -project UITestPractice.xcodeproj \
         -scheme UITestPractice \
         -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
         -derivedDataPath ${{ env.DERIVED_DATA }} \
         -only-testing:UITestPracticeUITests
+        result_test=${?}
         echo $RECORD_PID
         kill -SIGINT $RECORD_PID
         sleep 10
+        set -o errexit
+        if [ ! $result_test -eq 0 ]; then
+          echo "Failed Retry UITest 😱" >&2
+          exit 1
+        fi
 
     - name: Store Test Result Directory
-      if: success()
+      if: always()
       uses: actions/upload-artifact@v2
       with:
         name: Test Result
         path: ${{ env.OUTPUT_DIR }}
-        retention-days: 3
+        retention-days: 1
